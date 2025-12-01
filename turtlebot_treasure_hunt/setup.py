@@ -22,7 +22,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'treasure_hunt_game = turtlebot_treasure_hunt.treasure_hunt_game:main',
+            'treasure_hunt_game = turtlebot_treasure_hunt.treasure_hunt_game:run_game',
         ],
     },
 )
