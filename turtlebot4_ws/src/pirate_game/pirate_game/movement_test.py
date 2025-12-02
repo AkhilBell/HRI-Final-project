@@ -41,11 +41,11 @@ class MovementTest(Node):
         twist.linear.x = float(speed)
         
         start_time = time.time()
-        rate = self.create_rate(10)  # 10 Hz
+        sleep_interval = 0.1  # 10 Hz (publish every 0.1 seconds)
         
         while (time.time() - start_time) < duration:
             self.publisher.publish(twist)
-            rate.sleep()
+            time.sleep(sleep_interval)
         
         self.stop()
         self.get_logger().info("Forward movement complete")
@@ -67,11 +67,11 @@ class MovementTest(Node):
         twist.angular.z = float(angular_speed)
         
         start_time = time.time()
-        rate = self.create_rate(10)  # 10 Hz
+        sleep_interval = 0.1  # 10 Hz (publish every 0.1 seconds)
         
         while (time.time() - start_time) < turn_time:
             self.publisher.publish(twist)
-            rate.sleep()
+            time.sleep(sleep_interval)
         
         self.stop()
         self.get_logger().info("Turn complete")
