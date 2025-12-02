@@ -96,6 +96,11 @@ class MovementTest(Node):
             # Step 3: Move forward for 2 seconds (back to start)
             self.get_logger().info("\nStep 3: Returning to starting point (2 seconds)...")
             self.move_forward(2.0, speed=0.2)
+            time.sleep(0.5)  # Brief pause
+            
+            # Step 4: Turn to face original direction
+            self.get_logger().info("\nStep 4: Turning to face original direction...")
+            self.turn_around(angular_speed=0.5)
             
             self.get_logger().info("\n" + "=" * 60)
             self.get_logger().info("Movement Test Complete!")
