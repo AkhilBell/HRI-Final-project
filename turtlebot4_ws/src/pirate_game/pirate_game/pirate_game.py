@@ -7,6 +7,7 @@ import time
 
 from pirate_game.game_logic import GameLogic
 from pirate_game.simple_movement import SimpleMovement
+from pirate_game.tts_controller import TTSController
 
 
 class PirateGame(Node):
@@ -17,7 +18,14 @@ class PirateGame(Node):
         super().__init__('pirate_game')
         self.game_logic = GameLogic()
         self.movement = SimpleMovement()
-        self.get_logger().info("Pirate game initialized with movement controller")
+        self.tts = TTSController(logger=self.get_logger())
+        self.get_logger().info("Pirate game initialized with movement controller and TTS")
+    
+    def _number_to_word(self, num):
+        """Convert number to word for better TTS."""
+        words = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five",
+                 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
+        return words.get(num, str(num))
     
     def _get_island_selection(self):
         """
@@ -57,6 +65,14 @@ class PirateGame(Node):
             print("No treasure at this location.")
         print(f"{'='*60}\n")
         self.get_logger().info(f"Round {self.game_logic.game_state.current_round}: {island.name} - {'Treasure found!' if treasure_found else 'No treasure'}")
+        
+        # TTS announcement for treasure result
+        round_word = self._number_to_word(self.game_logic.game_state.current_round)
+        island_word = self._number_to_word(island.id)
+        if treasure_found:
+            self.tts.speak(f"Round {round_word} complete. Island {island_word}. Treasure found!")
+        else:
+            self.tts.speak(f"Round {round_word} complete. Island {island_word}. No treasure at this location.")
     
     def _display_statistics(self):
         """Display current game statistics."""
@@ -73,6 +89,24 @@ class PirateGame(Node):
             count = stats['treasures_found'][island_id]
             print(f"  {island.name}: {count}")
         print(f"{'='*60}\n")
+        
+        # TTS announcement for statistics
+        rounds_word = self._number_to_word(stats['total_rounds']) if stats['total_rounds'] <= 10 else str(stats['total_rounds'])
+        treasures_word = self._number_to_word(stats['total_treasures']) if stats['total_treasures'] <= 10 else str(stats['total_treasures'])
+        
+        stats_text = f"Total rounds: {rounds_word}. Total treasures found: {treasures_word}."
+        treasures_per_island = []
+        for island_id in [1, 2, 3]:
+            island = self.game_logic.islands[island_id - 1]
+            count = stats['treasures_found'][island_id]
+            island_word = self._number_to_word(island_id)
+            count_word = self._number_to_word(count) if count <= 10 else str(count)
+            treasures_per_island.append(f"Island {island_word}: {count_word}")
+        
+        if treasures_per_island:
+            stats_text += " Treasures per island: " + ", ".join(treasures_per_island) + "."
+        
+        self.tts.speak(stats_text)
     
     def run(self):
         """Main game loop with CLI prompts and robot movement."""
@@ -83,6 +117,9 @@ class PirateGame(Node):
         print("Each island has a different probability of treasure.")
         print("The robot will move to each island you select!")
         print("="*60 + "\n")
+        
+        # TTS welcome message
+        self.tts.speak("Welcome to the pirate treasure game. Search for treasure on 3 islands.")
         
         while True:
             try:
@@ -96,8 +133,12 @@ class PirateGame(Node):
                 # Step 1: Move robot to island
                 print(f"\n🚢 Navigating to {island.name}...")
                 self.get_logger().info(f"Moving to Island {island_id}")
+                island_word = self._number_to_word(island_id)
+                self.tts.speak(f"Navigating to Island {island_word}")
                 try:
                     self.movement.go_to_island(island_id, island.position_angle)
+                    # TTS announcement for arrival
+                    self.tts.speak(f"Arrived at Island {island_word}")
                 except Exception as e:
                     self.get_logger().error(f"Movement error: {e}")
                     print(f"⚠️  Movement error: {e}. Continuing with treasure check...")
@@ -106,6 +147,7 @@ class PirateGame(Node):
                 print(f"\n🔍 Searching for treasure at {island.name}...")
                 print("(Waiting 10 seconds...)")
                 self.get_logger().info("Waiting 10 seconds at island to check for treasure")
+                self.tts.speak(f"Searching for treasure at Island {island_word}")
                 
                 # Check for treasure during the wait
                 treasure_found = self.game_logic.check_for_treasure(island)
@@ -122,8 +164,11 @@ class PirateGame(Node):
                 # Step 3: Return robot to starting position
                 print(f"\n🏠 Returning to starting position...")
                 self.get_logger().info("Returning to starting position")
+                self.tts.speak("Returning to starting position")
                 try:
                     self.movement.return_to_start(island.position_angle)
+                    # TTS announcement for return complete
+                    self.tts.speak("Returned to starting position")
                 except Exception as e:
                     self.get_logger().error(f"Return movement error: {e}")
                     print(f"⚠️  Return movement error: {e}. Continuing...")
@@ -139,9 +184,11 @@ class PirateGame(Node):
                     elif choice in ['r', 'reset']:
                         self.game_logic.reset_game()
                         print("\nGame reset! Starting fresh...\n")
+                        self.tts.speak("Game reset. Starting fresh")
                         break
                     elif choice in ['q', 'quit']:
                         print("\nThanks for playing! 🏴‍☠️\n")
+                        self.tts.speak("Thanks for playing")
                         return
                     else:
                         print("Invalid choice. Please enter 'c' (continue), 'r' (reset), or 'q' (quit).")
@@ -149,6 +196,7 @@ class PirateGame(Node):
             except KeyboardInterrupt:
                 print("\n\nGame interrupted. Thanks for playing! 🏴‍☠️\n")
                 self.movement.stop()
+                self.tts.speak("Thanks for playing")
                 return
             except Exception as e:
                 self.get_logger().error(f"Error in game loop: {e}")
