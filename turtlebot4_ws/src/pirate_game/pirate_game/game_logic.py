@@ -15,11 +15,11 @@ class GameLogic:
     def __init__(self):
         """Initialize game logic with 3 islands and hardcoded probabilities."""
         # Hardcoded probabilities: Island 1: 0.3, Island 2: 0.5, Island 3: 0.7
-        # Position angles: Island 1: 0° (forward), Island 2: 120° (left), Island 3: 240° (right)
+        # Position angles: Island 1: 0° (forward), Island 2: +45°, Island 3: -45°
         self.islands = [
-            Island(1, "Island 1", 0.3, position_angle=0.0),  # 0 radians = forward
-            Island(2, "Island 2", 0.5, position_angle=2*math.pi/3),  # 120 degrees = left
-            Island(3, "Island 3", 0.7, position_angle=4*math.pi/3)   # 240 degrees = right
+            Island(1, "Island 1", 0.3, position_angle=0.0),  # 0 radians = forward (1.5m)
+            Island(2, "Island 2", 0.5, position_angle=math.pi/4),  # +45 degrees (π/4 radians)
+            Island(3, "Island 3", 0.7, position_angle=-math.pi/4)   # -45 degrees (-π/4 radians)
         ]
         self.game_state = GameState()
     

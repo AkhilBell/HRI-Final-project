@@ -123,7 +123,7 @@ class PirateGame(Node):
                 print(f"\n🏠 Returning to starting position...")
                 self.get_logger().info("Returning to starting position")
                 try:
-                    self.movement.return_to_start()
+                    self.movement.return_to_start(island.position_angle)
                 except Exception as e:
                     self.get_logger().error(f"Return movement error: {e}")
                     print(f"⚠️  Return movement error: {e}. Continuing...")

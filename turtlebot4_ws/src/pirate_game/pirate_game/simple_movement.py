@@ -107,11 +107,18 @@ class SimpleMovement(Node):
         
         self.get_logger().info(f"Arrived at Island {island_id}!")
     
-    def return_to_start(self):
-        """Return to starting position and face original direction."""
+    def return_to_start(self, position_angle):
+        """
+        Return to starting position and face original direction (0°).
+        
+        Args:
+            position_angle: The angle (in radians) the robot is currently facing
+                           (same as the island's position_angle)
+        """
         self.get_logger().info("Returning to starting position...")
         
         # Step 1: Turn 180 degrees to face start
+        # Robot is currently facing position_angle, need to face position_angle + π
         self.turn(math.pi)  # 180 degrees
         time.sleep(0.3)  # Brief pause
         
@@ -120,8 +127,21 @@ class SimpleMovement(Node):
         self.move_forward(duration, self.forward_speed)
         time.sleep(0.3)  # Brief pause
         
-        # Step 3: Turn back to face original direction
-        self.turn(math.pi)  # 180 degrees again
+        # Step 3: Turn to face original direction (0°)
+        # Robot is now at start, facing (position_angle + π)
+        # Need to turn to face 0°, so turn by: 0 - (position_angle + π) = -position_angle - π
+        # But we can simplify: we want to turn from (position_angle + π) to 0
+        # The shortest turn is: normalize(0 - (position_angle + π)) to [-π, π]
+        current_orientation = position_angle + math.pi
+        turn_to_zero = -current_orientation
+        
+        # Normalize to [-π, π] range
+        while turn_to_zero > math.pi:
+            turn_to_zero -= 2 * math.pi
+        while turn_to_zero < -math.pi:
+            turn_to_zero += 2 * math.pi
+        
+        self.turn(turn_to_zero)
         time.sleep(0.3)  # Brief pause
         
         self.get_logger().info("Returned to starting position!")
