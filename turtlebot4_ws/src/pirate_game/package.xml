@@ -3,8 +3,8 @@
 <package format="3">
   <name>pirate_game</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="xx2185@nyu.edu">ubuntu</maintainer>
+  <description>Pirate Treasure Island Game</description>
+  <maintainer email="mp2334@cornell.edu">ubuntu</maintainer>
   <license>TODO: License declaration</license>
 
   <depend>rclpy</depend>

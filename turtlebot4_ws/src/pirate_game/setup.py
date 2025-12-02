@@ -14,12 +14,16 @@ setup(
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='ubuntu',
-    maintainer_email='xx2185@nyu.edu',
-    description='TODO: Package description',
+    maintainer_email='mp2334@cornell.edu',
+    description='Pirate Treasure Island Game for Turtlebot 4',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            # This line registers the command "ros2 run pirate_game test_nav"
+            'test_nav = pirate_game.simple_nav_test:main',
+            # This line registers the command "ros2 run pirate_game pirate_game"
+            'pirate_game = pirate_game.pirate_game:main',
         ],
     },
 )

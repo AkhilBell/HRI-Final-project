@@ -24,7 +24,7 @@ class NavigationController(Node):
         # Create target pose (straight ahead)
         target_pose = PoseStamped()
         target_pose.header.frame_id = 'map'
-   	target_pose.header.stamp = self.navigator.get_clock().now().to_msg()
+        target_pose.header.stamp = self.navigator.get_clock().now().to_msg()
         target_pose.pose.position.x = self.target_distance
         target_pose.pose.position.y = 0.0
         target_pose.pose.orientation.w = 1.0
