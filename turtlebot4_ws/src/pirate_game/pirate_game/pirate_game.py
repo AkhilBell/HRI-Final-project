@@ -89,24 +89,6 @@ class PirateGame(Node):
             count = stats['treasures_found'][island_id]
             print(f"  {island.name}: {count}")
         print(f"{'='*60}\n")
-        
-        # TTS announcement for statistics
-        rounds_word = self._number_to_word(stats['total_rounds']) if stats['total_rounds'] <= 10 else str(stats['total_rounds'])
-        treasures_word = self._number_to_word(stats['total_treasures']) if stats['total_treasures'] <= 10 else str(stats['total_treasures'])
-        
-        stats_text = f"Total rounds: {rounds_word}. Total treasures found: {treasures_word}."
-        treasures_per_island = []
-        for island_id in [1, 2, 3]:
-            island = self.game_logic.islands[island_id - 1]
-            count = stats['treasures_found'][island_id]
-            island_word = self._number_to_word(island_id)
-            count_word = self._number_to_word(count) if count <= 10 else str(count)
-            treasures_per_island.append(f"Island {island_word}: {count_word}")
-        
-        if treasures_per_island:
-            stats_text += " Treasures per island: " + ", ".join(treasures_per_island) + "."
-        
-        self.tts.speak(stats_text)
     
     def run(self):
         """Main game loop with CLI prompts and robot movement."""
