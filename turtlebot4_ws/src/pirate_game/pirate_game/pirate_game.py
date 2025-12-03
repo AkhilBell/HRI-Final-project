@@ -8,6 +8,7 @@ import time
 from pirate_game.game_logic import GameLogic
 from pirate_game.simple_movement import SimpleMovement
 from pirate_game.tts_controller import TTSController
+from pirate_game.speech_controller import SpeechRecognitionController
 
 
 class PirateGame(Node):
@@ -19,7 +20,8 @@ class PirateGame(Node):
         self.game_logic = GameLogic()
         self.movement = SimpleMovement()
         self.tts = TTSController(logger=self.get_logger())
-        self.get_logger().info("Pirate game initialized with movement controller and TTS")
+        self.speech = SpeechRecognitionController(logger=self.get_logger())
+        self.get_logger().info("Pirate game initialized with movement controller, TTS, and speech recognition")
     
     def _number_to_word(self, num):
         """Convert number to word for better TTS."""
@@ -29,11 +31,53 @@ class PirateGame(Node):
     
     def _get_island_selection(self):
         """
-        Prompt user for island selection.
+        Get island selection via voice command with keyboard fallback.
         
         Returns:
             int: Selected island ID (1-3)
         """
+        max_attempts = 3
+        attempt = 0
+        
+        while attempt < max_attempts:
+            # Try speech recognition first
+            if self.speech.available:
+                self.tts.speak("Listening for island selection. Say one, two, or three.")
+                print("\n🎤 Listening for voice command... (or type a number)")
+                
+                # Listen for speech with longer timeout
+                text = self.speech.listen(timeout=8)
+                
+                if text:
+                    island_id = self.speech.parse_island_command(text)
+                    if island_id:
+                        island_word = self._number_to_word(island_id)
+                        self.tts.speak(f"Going to Island {island_word}")
+                        print(f"✅ Voice command recognized: Island {island_id}")
+                        return island_id
+                    else:
+                        self.tts.speak("I didn't understand. Please say one, two, or three.")
+                        print(f"❓ Could not parse command: '{text}'. Please try again.")
+                else:
+                    self.tts.speak("I didn't hear anything. Please try again.")
+                    print("⏱️  No speech detected. Trying keyboard input...")
+            
+            # Fallback to keyboard input
+            try:
+                selection = input("Select an island (1, 2, or 3): ").strip()
+                island_id = int(selection)
+                
+                if island_id in [1, 2, 3]:
+                    return island_id
+                else:
+                    print("Invalid selection. Please enter 1, 2, or 3.")
+            except ValueError:
+                print("Invalid input. Please enter a number (1, 2, or 3).")
+            
+            attempt += 1
+        
+        # Final fallback after max attempts
+        print("Using keyboard input for island selection...")
         while True:
             try:
                 selection = input("Select an island (1, 2, or 3): ").strip()
@@ -105,10 +149,7 @@ class PirateGame(Node):
         
         while True:
             try:
-                # Ask user which island they want to go to (TTS)
-                self.tts.speak("Which island would you like to go to? Choose island one, two, or three.")
-                
-                # Get island selection
+                # Get island selection (includes TTS prompt)
                 island_id = self._get_island_selection()
                 island = self.game_logic.select_island(island_id)
                 
@@ -161,8 +202,36 @@ class PirateGame(Node):
                 # Display statistics
                 self._display_statistics()
                 
-                # Ask to continue, reset, or quit
+                # Ask to continue, reset, or quit (voice or keyboard)
                 while True:
+                    # Try speech recognition first
+                    if self.speech.available:
+                        self.tts.speak("Say continue to play again, reset to start over, or quit to exit.")
+                        print("\n🎤 Listening for command... (or type c/r/q)")
+                        
+                        text = self.speech.listen(timeout=8)
+                        
+                        if text:
+                            command = self.speech.parse_game_command(text)
+                            if command == "continue":
+                                print("✅ Voice command: Continue")
+                                break
+                            elif command == "reset":
+                                self.game_logic.reset_game()
+                                print("\nGame reset! Starting fresh...\n")
+                                self.tts.speak("Game reset. Starting fresh")
+                                break
+                            elif command == "quit":
+                                print("\nThanks for playing! 🏴‍☠️\n")
+                                self.tts.speak("Thanks for playing")
+                                return
+                            else:
+                                self.tts.speak("I didn't understand. Please say continue, reset, or quit.")
+                                print(f"❓ Could not parse command: '{text}'. Please try again.")
+                        else:
+                            print("⏱️  No speech detected. Using keyboard input...")
+                    
+                    # Fallback to keyboard input
                     choice = input("Continue (c), Reset (r), or Quit (q)? ").strip().lower()
                     if choice in ['c', 'continue']:
                         break
