@@ -105,6 +105,9 @@ class PirateGame(Node):
         
         while True:
             try:
+                # Ask user which island they want to go to (TTS)
+                self.tts.speak("Which island would you like to go to? Choose island one, two, or three.")
+                
                 # Get island selection
                 island_id = self._get_island_selection()
                 island = self.game_logic.select_island(island_id)
