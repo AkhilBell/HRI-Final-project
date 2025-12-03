@@ -128,17 +128,17 @@ class PirateGame(Node):
                     self.get_logger().error(f"Movement error: {e}")
                     print(f"⚠️  Movement error: {e}. Continuing with treasure check...")
                 
-                # Step 2: Wait 10 seconds at island and check for treasure
+                # Step 2: Wait 3 seconds at island and check for treasure
                 print(f"\n🔍 Searching for treasure at {island.name}...")
-                print("(Waiting 10 seconds...)")
-                self.get_logger().info("Waiting 10 seconds at island to check for treasure")
+                print("(Waiting 3 seconds...)")
+                self.get_logger().info("Waiting 3 seconds at island to check for treasure")
                 self.tts.speak(f"Searching for treasure at Island {island_word}")
                 
                 # Check for treasure during the wait
                 treasure_found = self.game_logic.check_for_treasure(island)
                 
-                # Wait the full 10 seconds
-                time.sleep(10.0)
+                # Wait the full 3 seconds
+                time.sleep(3.0)
                 
                 # Record the result
                 self.game_logic.game_state.record_treasure_find(island_id, treasure_found)
