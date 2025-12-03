@@ -28,6 +28,8 @@ setup(
             'movement_test = pirate_game.movement_test:main',
             # This line registers the command "ros2 run pirate_game tts_test"
             'tts_test = pirate_game.tts_test:main',
+            # This line registers the command "ros2 run pirate_game speech_test"
+            'speech_test = pirate_game.speech_test:main',
         ],
     },
 )
