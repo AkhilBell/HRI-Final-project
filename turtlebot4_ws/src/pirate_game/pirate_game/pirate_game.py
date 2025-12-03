@@ -36,15 +36,15 @@ class PirateGame(Node):
         Returns:
             int: Selected island ID (1-3)
         """
-        max_attempts = 3
-        attempt = 0
+        max_speech_attempts = 5
+        speech_attempt = 0
         
-        while attempt < max_attempts:
-            # Try speech recognition first
-            if self.speech.available:
-                self.tts.speak("Listening for island selection. Say one, two, or three.")
-                print("\n🎤 Listening for voice command... (or type a number)")
-                
+        # Try speech recognition multiple times
+        if self.speech.available:
+            self.tts.speak("Listening for island selection. Say one, two, or three.")
+            print("\n🎤 Listening for voice command... (or type a number)")
+            
+            while speech_attempt < max_speech_attempts:
                 # Listen for speech with longer timeout
                 text = self.speech.listen(timeout=8)
                 
@@ -56,28 +56,22 @@ class PirateGame(Node):
                         print(f"✅ Voice command recognized: Island {island_id}")
                         return island_id
                     else:
-                        self.tts.speak("I didn't understand. Please say one, two, or three.")
-                        print(f"❓ Could not parse command: '{text}'. Please try again.")
+                        speech_attempt += 1
+                        if speech_attempt < max_speech_attempts:
+                            self.tts.speak("I didn't understand. Please say one, two, or three.")
+                            print(f"❓ Could not parse command: '{text}'. Please try again. ({speech_attempt}/{max_speech_attempts})")
+                        else:
+                            print(f"❓ Could not parse command: '{text}'. Switching to keyboard input.")
                 else:
-                    self.tts.speak("I didn't hear anything. Please try again.")
-                    print("⏱️  No speech detected. Trying keyboard input...")
-            
-            # Fallback to keyboard input
-            try:
-                selection = input("Select an island (1, 2, or 3): ").strip()
-                island_id = int(selection)
-                
-                if island_id in [1, 2, 3]:
-                    return island_id
-                else:
-                    print("Invalid selection. Please enter 1, 2, or 3.")
-            except ValueError:
-                print("Invalid input. Please enter a number (1, 2, or 3).")
-            
-            attempt += 1
+                    speech_attempt += 1
+                    if speech_attempt < max_speech_attempts:
+                        self.tts.speak("I didn't hear anything. Please try again.")
+                        print(f"⏱️  No speech detected. Retrying... ({speech_attempt}/{max_speech_attempts})")
+                    else:
+                        print("⏱️  No speech detected. Switching to keyboard input.")
         
-        # Final fallback after max attempts
-        print("Using keyboard input for island selection...")
+        # Fallback to keyboard input after speech attempts exhausted
+        print("\nUsing keyboard input for island selection...")
         while True:
             try:
                 selection = input("Select an island (1, 2, or 3): ").strip()
@@ -203,35 +197,55 @@ class PirateGame(Node):
                 self._display_statistics()
                 
                 # Ask to continue, reset, or quit (voice or keyboard)
-                while True:
-                    # Try speech recognition first
-                    if self.speech.available:
-                        self.tts.speak("Say continue to play again, reset to start over, or quit to exit.")
-                        print("\n🎤 Listening for command... (or type c/r/q)")
-                        
+                max_speech_attempts = 5
+                speech_attempt = 0
+                command_handled = False
+                
+                # Try speech recognition multiple times
+                if self.speech.available:
+                    self.tts.speak("Say continue to play again, reset to start over, or quit to exit.")
+                    print("\n🎤 Listening for command... (or type c/r/q)")
+                    
+                    while speech_attempt < max_speech_attempts and not command_handled:
                         text = self.speech.listen(timeout=8)
                         
                         if text:
                             command = self.speech.parse_game_command(text)
                             if command == "continue":
                                 print("✅ Voice command: Continue")
+                                command_handled = True
                                 break
                             elif command == "reset":
                                 self.game_logic.reset_game()
                                 print("\nGame reset! Starting fresh...\n")
                                 self.tts.speak("Game reset. Starting fresh")
+                                command_handled = True
                                 break
                             elif command == "quit":
                                 print("\nThanks for playing! 🏴‍☠️\n")
                                 self.tts.speak("Thanks for playing")
                                 return
                             else:
-                                self.tts.speak("I didn't understand. Please say continue, reset, or quit.")
-                                print(f"❓ Could not parse command: '{text}'. Please try again.")
+                                speech_attempt += 1
+                                if speech_attempt < max_speech_attempts:
+                                    self.tts.speak("I didn't understand. Please say continue, reset, or quit.")
+                                    print(f"❓ Could not parse command: '{text}'. Please try again. ({speech_attempt}/{max_speech_attempts})")
+                                else:
+                                    print(f"❓ Could not parse command: '{text}'. Switching to keyboard input.")
                         else:
-                            print("⏱️  No speech detected. Using keyboard input...")
+                            speech_attempt += 1
+                            if speech_attempt < max_speech_attempts:
+                                print(f"⏱️  No speech detected. Retrying... ({speech_attempt}/{max_speech_attempts})")
+                            else:
+                                print("⏱️  No speech detected. Switching to keyboard input.")
                     
-                    # Fallback to keyboard input
+                    # If command was handled, continue to next round
+                    if command_handled:
+                        continue
+                
+                # Fallback to keyboard input after speech attempts exhausted
+                print("\nUsing keyboard input...")
+                while True:
                     choice = input("Continue (c), Reset (r), or Quit (q)? ").strip().lower()
                     if choice in ['c', 'continue']:
                         break
