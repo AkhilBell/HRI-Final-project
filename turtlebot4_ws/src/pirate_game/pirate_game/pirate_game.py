@@ -41,7 +41,7 @@ class PirateGame(Node):
         
         # Try speech recognition multiple times
         if self.speech.available:
-            self.tts.speak("Listening for island selection. Say one, two, or three.")
+            self.tts.speak("Listening for island selection. Say island one, island two, or island three.")
             print("\n🎤 Listening for voice command... (or type a number)")
             
             while speech_attempt < max_speech_attempts:

@@ -137,20 +137,28 @@ class SpeechRecognitionController:
         
         text = text.lower().strip()
         
-        # Direct number words
+        # Check for exact matches first (handles "1", "2", "3", "one", "two", "three")
+        if text == "1" or text == "one":
+            return 1
+        if text == "2" or text == "two":
+            return 2
+        if text == "3" or text == "three":
+            return 3
+        
+        # Extract digits from text (handles "1", "2", "3" anywhere in text)
+        digits = re.findall(r'\d+', text)
+        if digits:
+            num = int(digits[0])
+            if 1 <= num <= 3:
+                return num
+        
+        # Direct number words (handles "one", "two", "three" in phrases)
         if "one" in text and "two" not in text and "three" not in text:
             return 1
         if "two" in text and "three" not in text:
             return 2
         if "three" in text:
             return 3
-        
-        # Extract digits from text
-        digits = re.findall(r'\d+', text)
-        if digits:
-            num = int(digits[0])
-            if 1 <= num <= 3:
-                return num
         
         # Check for "island" followed by number
         island_match = re.search(r'island\s+(one|two|three|\d+)', text)
