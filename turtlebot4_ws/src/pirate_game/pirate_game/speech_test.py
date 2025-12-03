@@ -1,25 +1,44 @@
 #!/usr/bin/env python3
 """
 Simple test script for speech-to-text using Google Speech Recognition.
+
+Note: ALSA warnings may still appear. To fully suppress them, run:
+  ros2 run pirate_game speech_test 2>/dev/null
 """
+import os
+import sys
+
+# Suppress ALSA warnings by setting environment variable before importing anything
+os.environ['ALSA_CARD'] = '0'
+os.environ['PYTHONWARNINGS'] = 'ignore'
+
 import rclpy
 from rclpy.node import Node
 import speech_recognition as sr
-import os
-import sys
 from contextlib import contextmanager
 
 
 @contextmanager
 def suppress_stderr():
-    """Context manager to suppress stderr output (ALSA warnings)."""
-    with open(os.devnull, "w") as devnull:
-        old_stderr = sys.stderr
-        sys.stderr = devnull
+    """Context manager to suppress stderr output (ALSA warnings) at file descriptor level."""
+    # Save original stderr file descriptor
+    original_stderr_fd = sys.stderr.fileno()
+    # Create a duplicate of the original stderr
+    saved_stderr_fd = os.dup(original_stderr_fd)
+    
+    try:
+        # Redirect stderr to /dev/null at the file descriptor level
+        # This catches C library writes that bypass Python's stderr
+        devnull_fd = os.open(os.devnull, os.O_WRONLY)
         try:
+            os.dup2(devnull_fd, original_stderr_fd)
             yield
         finally:
-            sys.stderr = old_stderr
+            # Restore original stderr immediately
+            os.dup2(saved_stderr_fd, original_stderr_fd)
+            os.close(devnull_fd)
+    finally:
+        os.close(saved_stderr_fd)
 
 
 class SpeechTest(Node):
@@ -61,14 +80,16 @@ class SpeechTest(Node):
             self.get_logger().info(f"Listening for speech (timeout: {timeout}s)...")
             print(f"\n🎤 Listening... (speak now, timeout: {timeout}s)")
             
-            # Suppress ALSA errors during listening
+            # Suppress ALSA errors during listening - keep active for entire operation
             with suppress_stderr():
                 with self.microphone as source:
+                    # The listen() call blocks, so stderr must stay redirected
                     audio = self.recognizer.listen(source, timeout=timeout)
             
             self.get_logger().info("Processing speech...")
             print("Processing...")
             
+            # Process audio (this doesn't generate ALSA warnings)
             text = self.recognizer.recognize_google(audio).lower()
             return text
             
@@ -99,6 +120,8 @@ class SpeechTest(Node):
         print("=" * 60)
         print("This will listen for your speech and convert it to text.")
         print("Say something and it will be displayed below.")
+        print("\nNote: If you see ALSA warnings, you can suppress them by running:")
+        print("  ros2 run pirate_game speech_test 2>/dev/null")
         print("=" * 60 + "\n")
         
         try:
