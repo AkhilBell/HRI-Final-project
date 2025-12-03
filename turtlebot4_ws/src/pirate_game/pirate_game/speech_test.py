@@ -5,6 +5,21 @@ Simple test script for speech-to-text using Google Speech Recognition.
 import rclpy
 from rclpy.node import Node
 import speech_recognition as sr
+import os
+import sys
+from contextlib import contextmanager
+
+
+@contextmanager
+def suppress_stderr():
+    """Context manager to suppress stderr output (ALSA warnings)."""
+    with open(os.devnull, "w") as devnull:
+        old_stderr = sys.stderr
+        sys.stderr = devnull
+        try:
+            yield
+        finally:
+            sys.stderr = old_stderr
 
 
 class SpeechTest(Node):
@@ -12,8 +27,10 @@ class SpeechTest(Node):
     
     def __init__(self):
         super().__init__('speech_test')
-        self.recognizer = sr.Recognizer()
-        self.microphone = sr.Microphone()
+        # Suppress ALSA errors during microphone initialization
+        with suppress_stderr():
+            self.recognizer = sr.Recognizer()
+            self.microphone = sr.Microphone()
         self.get_logger().info("Speech test initialized")
         self._setup_microphone()
     
@@ -21,8 +38,10 @@ class SpeechTest(Node):
         """Setup microphone and adjust for ambient noise."""
         try:
             self.get_logger().info("Adjusting microphone for ambient noise...")
-            with self.microphone as source:
-                self.recognizer.adjust_for_ambient_noise(source, duration=1)
+            # Suppress ALSA errors during microphone setup
+            with suppress_stderr():
+                with self.microphone as source:
+                    self.recognizer.adjust_for_ambient_noise(source, duration=1)
             self.get_logger().info("Microphone ready!")
         except Exception as e:
             self.get_logger().error(f"Microphone setup error: {e}")
@@ -42,8 +61,10 @@ class SpeechTest(Node):
             self.get_logger().info(f"Listening for speech (timeout: {timeout}s)...")
             print(f"\n🎤 Listening... (speak now, timeout: {timeout}s)")
             
-            with self.microphone as source:
-                audio = self.recognizer.listen(source, timeout=timeout)
+            # Suppress ALSA errors during listening
+            with suppress_stderr():
+                with self.microphone as source:
+                    audio = self.recognizer.listen(source, timeout=timeout)
             
             self.get_logger().info("Processing speech...")
             print("Processing...")
