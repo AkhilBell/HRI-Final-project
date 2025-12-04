@@ -19,8 +19,8 @@ class SimpleMovement(Node):
         time.sleep(0.5)
         self.get_logger().info("Simple movement controller initialized")
         self.island_distance = 1.5  # Fixed distance to islands in meters
-        self.forward_speed = 0.3  # Default forward speed in m/s
-        self.angular_speed = 0.7  # Default angular speed in rad/s
+        self.forward_speed = 0.5  # Default forward speed in m/s
+        self.angular_speed = 2.0  # Default angular speed in rad/s
     
     def stop(self):
         """Stop the robot immediately."""
