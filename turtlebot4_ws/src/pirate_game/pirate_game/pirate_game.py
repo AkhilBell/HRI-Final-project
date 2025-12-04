@@ -4,6 +4,8 @@ Main Pirate Game class with CLI interface and robot movement.
 import rclpy
 from rclpy.node import Node
 import time
+import threading
+import queue
 
 from pirate_game.game_logic import GameLogic
 from pirate_game.simple_movement import SimpleMovement
@@ -32,25 +34,91 @@ class PirateGame(Node):
     def _get_island_selection(self):
         """
         Get island selection via voice command with keyboard fallback.
+        Keyboard input can override voice input at any time.
         
         Returns:
             int: Selected island ID (1-3)
         """
-        max_speech_attempts = 5
+        max_speech_attempts = 2
         speech_attempt = 0
         
-        # Try speech recognition multiple times
+        # Queue to receive keyboard input from thread
+        keyboard_queue = queue.Queue()
+        keyboard_done = threading.Event()
+        
+        def keyboard_listener():
+            """Thread function to listen for keyboard input."""
+            try:
+                selection = input("Select an island (1, 2, or 3): ").strip()
+                keyboard_queue.put(selection)
+            except EOFError:
+                keyboard_queue.put(None)
+            finally:
+                keyboard_done.set()
+        
+        # Try speech recognition with keyboard override
         if self.speech.available:
             self.tts.speak("Listening for island selection. Say island one, island two, or island three.")
-            print("\n🎤 Listening for voice command... (or type a number)")
+            print("\n🎤 Listening for voice command... (or type a number to override)")
+            
+            # Start keyboard listener thread
+            keyboard_thread = threading.Thread(target=keyboard_listener, daemon=True)
+            keyboard_thread.start()
             
             while speech_attempt < max_speech_attempts:
-                # Listen for speech with longer timeout
+                # Check if keyboard input is available (non-blocking)
+                try:
+                    selection = keyboard_queue.get_nowait()
+                    keyboard_done.set()
+                    # Process keyboard input
+                    try:
+                        island_id = int(selection)
+                        if island_id in [1, 2, 3]:
+                            print(f"✅ Keyboard input: Island {island_id}")
+                            return island_id
+                        else:
+                            print("Invalid selection. Please enter 1, 2, or 3.")
+                            # Restart keyboard listener
+                            keyboard_thread = threading.Thread(target=keyboard_listener, daemon=True)
+                            keyboard_thread.start()
+                    except (ValueError, TypeError):
+                        print("Invalid input. Please enter a number (1, 2, or 3).")
+                        # Restart keyboard listener
+                        keyboard_thread = threading.Thread(target=keyboard_listener, daemon=True)
+                        keyboard_thread.start()
+                except queue.Empty:
+                    pass  # No keyboard input yet, continue with speech
+                
+                # Listen for speech with timeout
                 text = self.speech.listen(timeout=8)
+                
+                # Check keyboard again after speech listening
+                try:
+                    selection = keyboard_queue.get_nowait()
+                    keyboard_done.set()
+                    # Process keyboard input
+                    try:
+                        island_id = int(selection)
+                        if island_id in [1, 2, 3]:
+                            print(f"✅ Keyboard input: Island {island_id}")
+                            return island_id
+                        else:
+                            print("Invalid selection. Please enter 1, 2, or 3.")
+                            # Restart keyboard listener
+                            keyboard_thread = threading.Thread(target=keyboard_listener, daemon=True)
+                            keyboard_thread.start()
+                    except (ValueError, TypeError):
+                        print("Invalid input. Please enter a number (1, 2, or 3).")
+                        # Restart keyboard listener
+                        keyboard_thread = threading.Thread(target=keyboard_listener, daemon=True)
+                        keyboard_thread.start()
+                except queue.Empty:
+                    pass  # No keyboard input, process speech result
                 
                 if text:
                     island_id = self.speech.parse_island_command(text)
                     if island_id:
+                        keyboard_done.set()  # Cancel keyboard listener
                         island_word = self._number_to_word(island_id)
                         self.tts.speak(f"Going to Island {island_word}")
                         print(f"✅ Voice command recognized: Island {island_id}")
@@ -69,8 +137,13 @@ class PirateGame(Node):
                         print(f"⏱️  No speech detected. Retrying... ({speech_attempt}/{max_speech_attempts})")
                     else:
                         print("⏱️  No speech detected. Switching to keyboard input.")
+            
+            keyboard_done.set()  # Cancel keyboard listener if speech attempts exhausted
         
-        # Fallback to keyboard input after speech attempts exhausted
+        # Fallback to keyboard input after speech attempts exhausted or if speech not available
+        if not keyboard_done.is_set():
+            keyboard_done.set()  # Cancel any existing keyboard thread
+        
         print("\nUsing keyboard input for island selection...")
         while True:
             try:
@@ -197,31 +270,107 @@ class PirateGame(Node):
                 self._display_statistics()
                 
                 # Ask to continue, reset, or quit (voice or keyboard)
-                max_speech_attempts = 5
+                max_speech_attempts = 2
                 speech_attempt = 0
                 command_handled = False
                 
-                # Try speech recognition multiple times
+                # Queue to receive keyboard input from thread
+                keyboard_queue = queue.Queue()
+                keyboard_done = threading.Event()
+                
+                def keyboard_listener():
+                    """Thread function to listen for keyboard input."""
+                    try:
+                        choice = input("Continue (c), Reset (r), or Quit (q)? ").strip().lower()
+                        keyboard_queue.put(choice)
+                    except EOFError:
+                        keyboard_queue.put(None)
+                    finally:
+                        keyboard_done.set()
+                
+                # Try speech recognition with keyboard override
                 if self.speech.available:
                     self.tts.speak("Say continue to play again, reset to start over, or quit to exit.")
-                    print("\n🎤 Listening for command... (or type c/r/q)")
+                    print("\n🎤 Listening for command... (or type c/r/q to override)")
+                    
+                    # Start keyboard listener thread
+                    keyboard_thread = threading.Thread(target=keyboard_listener, daemon=True)
+                    keyboard_thread.start()
                     
                     while speech_attempt < max_speech_attempts and not command_handled:
+                        # Check if keyboard input is available (non-blocking)
+                        try:
+                            choice = keyboard_queue.get_nowait()
+                            keyboard_done.set()
+                            # Process keyboard input
+                            if choice in ['c', 'continue']:
+                                print("✅ Keyboard input: Continue")
+                                command_handled = True
+                                break
+                            elif choice in ['r', 'reset']:
+                                self.game_logic.reset_game()
+                                print("\nGame reset! Starting fresh...\n")
+                                self.tts.speak("Game reset. Starting fresh")
+                                command_handled = True
+                                break
+                            elif choice in ['q', 'quit']:
+                                print("\nThanks for playing! 🏴‍☠️\n")
+                                self.tts.speak("Thanks for playing")
+                                return
+                            else:
+                                print("Invalid choice. Please enter 'c' (continue), 'r' (reset), or 'q' (quit).")
+                                # Restart keyboard listener
+                                keyboard_thread = threading.Thread(target=keyboard_listener, daemon=True)
+                                keyboard_thread.start()
+                        except queue.Empty:
+                            pass  # No keyboard input yet, continue with speech
+                        
+                        # Listen for speech with timeout
                         text = self.speech.listen(timeout=8)
+                        
+                        # Check keyboard again after speech listening
+                        try:
+                            choice = keyboard_queue.get_nowait()
+                            keyboard_done.set()
+                            # Process keyboard input
+                            if choice in ['c', 'continue']:
+                                print("✅ Keyboard input: Continue")
+                                command_handled = True
+                                break
+                            elif choice in ['r', 'reset']:
+                                self.game_logic.reset_game()
+                                print("\nGame reset! Starting fresh...\n")
+                                self.tts.speak("Game reset. Starting fresh")
+                                command_handled = True
+                                break
+                            elif choice in ['q', 'quit']:
+                                print("\nThanks for playing! 🏴‍☠️\n")
+                                self.tts.speak("Thanks for playing")
+                                return
+                            else:
+                                print("Invalid choice. Please enter 'c' (continue), 'r' (reset), or 'q' (quit).")
+                                # Restart keyboard listener
+                                keyboard_thread = threading.Thread(target=keyboard_listener, daemon=True)
+                                keyboard_thread.start()
+                        except queue.Empty:
+                            pass  # No keyboard input, process speech result
                         
                         if text:
                             command = self.speech.parse_game_command(text)
                             if command == "continue":
+                                keyboard_done.set()  # Cancel keyboard listener
                                 print("✅ Voice command: Continue")
                                 command_handled = True
                                 break
                             elif command == "reset":
+                                keyboard_done.set()  # Cancel keyboard listener
                                 self.game_logic.reset_game()
                                 print("\nGame reset! Starting fresh...\n")
                                 self.tts.speak("Game reset. Starting fresh")
                                 command_handled = True
                                 break
                             elif command == "quit":
+                                keyboard_done.set()  # Cancel keyboard listener
                                 print("\nThanks for playing! 🏴‍☠️\n")
                                 self.tts.speak("Thanks for playing")
                                 return
@@ -239,11 +388,16 @@ class PirateGame(Node):
                             else:
                                 print("⏱️  No speech detected. Switching to keyboard input.")
                     
+                    keyboard_done.set()  # Cancel keyboard listener if speech attempts exhausted
+                    
                     # If command was handled, continue to next round
                     if command_handled:
                         continue
                 
-                # Fallback to keyboard input after speech attempts exhausted
+                # Fallback to keyboard input after speech attempts exhausted or if speech not available
+                if not keyboard_done.is_set():
+                    keyboard_done.set()  # Cancel any existing keyboard thread
+                
                 print("\nUsing keyboard input...")
                 while True:
                     choice = input("Continue (c), Reset (r), or Quit (q)? ").strip().lower()
