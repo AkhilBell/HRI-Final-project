@@ -17,7 +17,7 @@ class GameLogic:
         # Hardcoded probabilities: Island 1: 0.3, Island 2: 0.5, Island 3: 0.7
         # Position angles: Island 1: 0° (forward), Island 2: +45°, Island 3: -45°
         self.islands = [
-            Island(1, "Island 1", 0.3, position_angle=0.0),  # 0 radians = forward (1.5m)
+            Island(1, "Island 1", 0.3, position_angle=0.0),  # 0 radians = forward (1m)
             Island(2, "Island 2", 0.5, position_angle=math.pi/4),  # +45 degrees (π/4 radians)
             Island(3, "Island 3", 0.7, position_angle=-math.pi/4)   # -45 degrees (-π/4 radians)
         ]
