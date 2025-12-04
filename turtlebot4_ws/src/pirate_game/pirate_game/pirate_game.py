@@ -108,9 +108,9 @@ class PirateGame(Node):
         round_word = self._number_to_word(self.game_logic.game_state.current_round)
         island_word = self._number_to_word(island.id)
         if treasure_found:
-            self.tts.speak(f"Round {round_word} complete. Island {island_word}. Treasure found!")
+            self.tts.speak(f"Treasure found!")
         else:
-            self.tts.speak(f"Round {round_word} complete. Island {island_word}. No treasure at this location.")
+            self.tts.speak(f"No treasure at this location.")
     
     def _display_statistics(self):
         """Display current game statistics."""
@@ -154,7 +154,7 @@ class PirateGame(Node):
                 print(f"\n🚢 Navigating to {island.name}...")
                 self.get_logger().info(f"Moving to Island {island_id}")
                 island_word = self._number_to_word(island_id)
-                self.tts.speak(f"Navigating to Island {island_word}")
+                self.tts.speak("Aye")
                 try:
                     self.movement.go_to_island(island_id, island.position_angle)
                     # TTS announcement for arrival
