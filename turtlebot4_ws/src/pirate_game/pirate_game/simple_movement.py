@@ -129,17 +129,23 @@ class SimpleMovement(Node):
         
         # Step 3: Turn to face original direction (0°)
         # Robot is now at start, facing (position_angle + π)
-        # Need to turn to face 0°, so turn by: 0 - (position_angle + π) = -position_angle - π
-        # But we can simplify: we want to turn from (position_angle + π) to 0
-        # The shortest turn is: normalize(0 - (position_angle + π)) to [-π, π]
+        # Need to turn to face 0°, so calculate: 0 - (position_angle + π) = -position_angle - π
+        # Then normalize to [-π, π] to get the shortest turn
         current_orientation = position_angle + math.pi
-        turn_to_zero = -current_orientation
+        target_orientation = 0.0
+        turn_to_zero = target_orientation - current_orientation
         
-        # Normalize to [-π, π] range
+        # Normalize to [-π, π] range to get shortest path
         while turn_to_zero > math.pi:
             turn_to_zero -= 2 * math.pi
         while turn_to_zero < -math.pi:
             turn_to_zero += 2 * math.pi
+        
+        # Add a small correction factor to account for accumulated errors
+        # This helps compensate for small drift during movements
+        # Use a small percentage (5%) of the turn angle as correction
+        correction_factor = 1.05  # 5% overcorrection to account for drift
+        turn_to_zero *= correction_factor
         
         self.turn(turn_to_zero)
         time.sleep(0.3)  # Brief pause
