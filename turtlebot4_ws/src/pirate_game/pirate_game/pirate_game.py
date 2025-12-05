@@ -269,7 +269,13 @@ class PirateGame(Node):
                 # Display statistics
                 self._display_statistics()
                 
-                # Ask to continue, reset, or quit (voice or keyboard)
+                # Only ask to continue/reset/quit after the 10th round
+                if self.game_logic.game_state.current_round < 10:
+                    # Automatically continue to next round
+                    print(f"\nRound {self.game_logic.game_state.current_round} complete. Continuing to next round...\n")
+                    continue
+                
+                # Ask to continue, reset, or quit (voice or keyboard) after 10th round
                 max_speech_attempts = 2
                 speech_attempt = 0
                 command_handled = False
