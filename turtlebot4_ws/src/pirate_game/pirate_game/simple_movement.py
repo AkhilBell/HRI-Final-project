@@ -117,8 +117,15 @@ class SimpleMovement(Node):
         """
         self.get_logger().info("Returning to starting position...")
         
+        # Step 0: Compensate for consistent counterclockwise overrotation (~5 degrees)
+        # Apply correction at the island before turning back
+        # Turn slightly clockwise to correct the overrotation
+        correction_angle = -math.radians(5)  # -5 degrees clockwise correction
+        self.turn(correction_angle)
+        time.sleep(0.3)  # Brief pause
+        
         # Step 1: Turn 180 degrees to face start
-        # Robot is currently facing position_angle, need to face position_angle + π
+        # Robot is currently facing position_angle (corrected), need to face position_angle + π
         self.turn(math.pi)  # 180 degrees
         time.sleep(0.3)  # Brief pause
         
@@ -142,12 +149,6 @@ class SimpleMovement(Node):
             turn_to_zero += 2 * math.pi
         
         self.turn(turn_to_zero)
-        time.sleep(0.3)  # Brief pause
-        
-        # Compensate for consistent counterclockwise overrotation (~5 degrees)
-        # Turn slightly clockwise to correct the overrotation
-        correction_angle = -math.radians(5)  # -5 degrees clockwise correction
-        self.turn(correction_angle)
         time.sleep(0.3)  # Brief pause
         
         self.get_logger().info("Returned to starting position!")
