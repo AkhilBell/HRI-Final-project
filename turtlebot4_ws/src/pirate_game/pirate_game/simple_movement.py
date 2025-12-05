@@ -119,8 +119,8 @@ class SimpleMovement(Node):
         
         # Step 0: Compensate for consistent counterclockwise overrotation (~5 degrees)
         # Apply correction at the island before turning back
-        # Turn slightly clockwise to correct the overrotation
-        correction_angle = -math.radians(5)  # -5 degrees clockwise correction
+        # Turn slightly counterclockwise to correct the overrotation
+        correction_angle = math.radians(5)  # +5 degrees counterclockwise correction
         self.turn(correction_angle)
         time.sleep(0.3)  # Brief pause
         
