@@ -141,13 +141,13 @@ class SimpleMovement(Node):
         while turn_to_zero < -math.pi:
             turn_to_zero += 2 * math.pi
         
-        # Add a small correction factor to account for accumulated errors
-        # This helps compensate for small drift during movements
-        # Use a small percentage (5%) of the turn angle as correction
-        correction_factor = 1.05  # 5% overcorrection to account for drift
-        turn_to_zero *= correction_factor
-        
         self.turn(turn_to_zero)
+        time.sleep(0.3)  # Brief pause
+        
+        # Compensate for consistent counterclockwise overrotation (~5 degrees)
+        # Turn slightly clockwise to correct the overrotation
+        correction_angle = -math.radians(5)  # -5 degrees clockwise correction
+        self.turn(correction_angle)
         time.sleep(0.3)  # Brief pause
         
         self.get_logger().info("Returned to starting position!")
