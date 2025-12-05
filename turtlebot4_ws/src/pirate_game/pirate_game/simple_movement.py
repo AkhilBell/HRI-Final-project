@@ -67,19 +67,14 @@ class SimpleMovement(Node):
         if angular_speed is None:
             angular_speed = self.angular_speed
         
-        # Apply correction for consistent counterclockwise overrotation (~5 degrees)
-        # Compensate by adding to the turn angle
-        correction_angle = math.radians(5)  # +5 degrees counterclockwise correction
-        corrected_angle = angle + correction_angle
-        
         angle_deg = math.degrees(angle)
-        self.get_logger().info(f"Turning {angle_deg:.1f} degrees ({angle:.3f} radians, corrected to {math.degrees(corrected_angle):.1f}°)...")
+        self.get_logger().info(f"Turning {angle_deg:.1f} degrees ({angle:.3f} radians)...")
         
-        # Calculate time needed using corrected angle
-        turn_time = abs(corrected_angle) / angular_speed
+        # Calculate time needed
+        turn_time = abs(angle) / angular_speed
         
         twist = Twist()
-        twist.angular.z = float(angular_speed) if corrected_angle >= 0 else float(-angular_speed)
+        twist.angular.z = float(angular_speed) if angle >= 0 else float(-angular_speed)
         
         start_time = time.time()
         sleep_interval = 0.1  # 10 Hz (publish every 0.1 seconds)
@@ -91,6 +86,36 @@ class SimpleMovement(Node):
         self.stop()
         self.get_logger().info("Turn complete")
     
+    def _apply_correction(self, correction_angle):
+        """
+        Apply a small correction turn before a main rotation.
+        
+        Args:
+            correction_angle: Small correction angle in radians
+        """
+        if abs(correction_angle) < 0.001:  # Skip if correction is negligible
+            return
+        
+        correction_deg = math.degrees(correction_angle)
+        self.get_logger().info(f"Applying {correction_deg:.1f}° correction...")
+        
+        # Use a faster angular speed for the small correction
+        correction_speed = self.angular_speed
+        turn_time = abs(correction_angle) / correction_speed
+        
+        twist = Twist()
+        twist.angular.z = float(correction_speed) if correction_angle >= 0 else float(-correction_speed)
+        
+        start_time = time.time()
+        sleep_interval = 0.1  # 10 Hz
+        
+        while (time.time() - start_time) < turn_time:
+            self.publisher.publish(twist)
+            time.sleep(sleep_interval)
+        
+        self.stop()
+        time.sleep(0.1)  # Brief pause after correction
+    
     def go_to_island(self, island_id, position_angle):
         """
         Move to a specific island position.
@@ -101,7 +126,11 @@ class SimpleMovement(Node):
         """
         self.get_logger().info(f"Navigating to Island {island_id}...")
         
-        # Step 1: Turn to face island direction
+        # Step 1: Apply correction before turning to face island direction
+        correction_angle = math.radians(5)  # +5 degrees counterclockwise correction
+        self._apply_correction(correction_angle)
+        
+        # Turn to face island direction
         self.turn(position_angle)
         time.sleep(0.3)  # Brief pause
         
@@ -122,8 +151,12 @@ class SimpleMovement(Node):
         """
         self.get_logger().info("Returning to starting position...")
         
-        # Step 1: Turn 180 degrees to face start
-        # Robot is currently facing position_angle (corrected), need to face position_angle + π
+        # Step 1: Apply correction before turning 180 degrees to face start
+        correction_angle = math.radians(5)  # +5 degrees counterclockwise correction
+        self._apply_correction(correction_angle)
+        
+        # Turn 180 degrees to face start
+        # Robot is currently facing position_angle, need to face position_angle + π
         self.turn(math.pi)  # 180 degrees
         time.sleep(0.3)  # Brief pause
         
@@ -132,7 +165,10 @@ class SimpleMovement(Node):
         self.move_forward(duration, self.forward_speed)
         time.sleep(0.3)  # Brief pause
         
-        # Step 3: Turn to face original direction (0°)
+        # Step 3: Apply correction before turning to face original direction (0°)
+        self._apply_correction(correction_angle)
+        
+        # Turn to face original direction (0°)
         # Robot is now at start, facing (position_angle + π)
         # Need to turn to face 0°, so calculate: 0 - (position_angle + π) = -position_angle - π
         # Then normalize to [-π, π] to get the shortest turn
