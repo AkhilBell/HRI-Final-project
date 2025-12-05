@@ -7,7 +7,7 @@ A ROS2-based interactive treasure hunting game for TurtleBot4 that combines robo
 ## Features
 
 - **Voice-Controlled Gameplay**: Use voice commands to select islands and control the game
-- **Robot Movement**: Robot physically moves to different island positions (1m away at different angles)
+- **Robot Movement**: Robot physically moves to different island positions (1.5m away at different angles)
 - **Text-to-Speech**: Robot speaks all game events and prompts
 - **Treasure Hunting**: Three islands with different treasure probabilities (30%, 50%, 70%)
 - **Game Statistics**: Track rounds played and treasures found per island
@@ -21,7 +21,7 @@ A ROS2-based interactive treasure hunting game for TurtleBot4 that combines robo
 - **Island 2**: +45° (right) - 50% treasure probability
 - **Island 3**: -45° (left) - 70% treasure probability
 
-All islands are 1 meter from the starting position.
+All islands are 1.5 meters from the starting position.
 
 ### Game Flow
 
@@ -180,7 +180,7 @@ Edit `simple_movement.py` to adjust:
 
 - `forward_speed`: Default 0.3 m/s
 - `angular_speed`: Default 0.7 rad/s
-- `island_distance`: Default 1.0 meters
+- `island_distance`: Default 1.5 meters
 
 ### Island Positions
 

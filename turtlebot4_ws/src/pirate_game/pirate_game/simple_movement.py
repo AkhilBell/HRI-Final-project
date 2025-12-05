@@ -18,7 +18,7 @@ class SimpleMovement(Node):
         # Wait a moment for publisher to be ready
         time.sleep(0.5)
         self.get_logger().info("Simple movement controller initialized")
-        self.island_distance = 1.0  # Fixed distance to islands in meters
+        self.island_distance = 1.5  # Fixed distance to islands in meters
         self.forward_speed = 0.5  # Default forward speed in m/s
         self.angular_speed = 2.0  # Default angular speed in rad/s
     
