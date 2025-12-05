@@ -39,7 +39,7 @@ class PirateGame(Node):
         Returns:
             int: Selected island ID (1-3)
         """
-        max_speech_attempts = 1
+        max_speech_attempts = 3
         speech_attempt = 0
         
         # Queue to receive keyboard input from thread
