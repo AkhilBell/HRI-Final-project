@@ -120,7 +120,6 @@ class PirateGame(Node):
                     if island_id:
                         keyboard_done.set()  # Cancel keyboard listener
                         island_word = self._number_to_word(island_id)
-                        self.tts.speak(f"Going to Island {island_word}")
                         print(f"✅ Voice command recognized: Island {island_id}")
                         return island_id
                     else:
@@ -227,7 +226,7 @@ class PirateGame(Node):
                 print(f"\n🚢 Navigating to {island.name}...")
                 self.get_logger().info(f"Moving to Island {island_id}")
                 island_word = self._number_to_word(island_id)
-                self.tts.speak("Aye")
+                self.tts.speak("Aye aye captain")
                 try:
                     self.movement.go_to_island(island_id, island.position_angle)
                     # TTS announcement for arrival
