@@ -67,14 +67,19 @@ class SimpleMovement(Node):
         if angular_speed is None:
             angular_speed = self.angular_speed
         
-        angle_deg = math.degrees(angle)
-        self.get_logger().info(f"Turning {angle_deg:.1f} degrees ({angle:.3f} radians)...")
+        # Apply correction for consistent counterclockwise overrotation (~5 degrees)
+        # Compensate by adding to the turn angle
+        correction_angle = math.radians(5)  # +5 degrees counterclockwise correction
+        corrected_angle = angle + correction_angle
         
-        # Calculate time needed
-        turn_time = abs(angle) / angular_speed
+        angle_deg = math.degrees(angle)
+        self.get_logger().info(f"Turning {angle_deg:.1f} degrees ({angle:.3f} radians, corrected to {math.degrees(corrected_angle):.1f}°)...")
+        
+        # Calculate time needed using corrected angle
+        turn_time = abs(corrected_angle) / angular_speed
         
         twist = Twist()
-        twist.angular.z = float(angular_speed) if angle >= 0 else float(-angular_speed)
+        twist.angular.z = float(angular_speed) if corrected_angle >= 0 else float(-angular_speed)
         
         start_time = time.time()
         sleep_interval = 0.1  # 10 Hz (publish every 0.1 seconds)
@@ -116,13 +121,6 @@ class SimpleMovement(Node):
                            (same as the island's position_angle)
         """
         self.get_logger().info("Returning to starting position...")
-        
-        # Step 0: Compensate for consistent counterclockwise overrotation (~5 degrees)
-        # Apply correction at the island before turning back
-        # Turn slightly counterclockwise to correct the overrotation
-        correction_angle = math.radians(5)  # +5 degrees counterclockwise correction
-        self.turn(correction_angle)
-        time.sleep(0.3)  # Brief pause
         
         # Step 1: Turn 180 degrees to face start
         # Robot is currently facing position_angle (corrected), need to face position_angle + π
