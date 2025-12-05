@@ -59,9 +59,11 @@ class PirateGame(Node):
         # Try speech recognition with keyboard override
         if self.speech.available:
             self.tts.speak("Listening for island selection. Say island one, island two, or island three.")
-            print("\n🎤 Listening for voice command... (or type a number to override)")
+            print("\n🎤 Listening for voice command...")
+            print("💡 Tip: Type a number (1, 2, or 3) at any time to skip voice input")
+            print("   Or press Enter to immediately switch to keyboard input\n")
             
-            # Start keyboard listener thread
+            # Start keyboard listener thread immediately
             keyboard_thread = threading.Thread(target=keyboard_listener, daemon=True)
             keyboard_thread.start()
             
@@ -70,6 +72,12 @@ class PirateGame(Node):
                 try:
                     selection = keyboard_queue.get_nowait()
                     keyboard_done.set()
+                    
+                    # Empty input means user wants to skip voice and use keyboard
+                    if selection == "" or selection is None:
+                        print("⏭️  Skipping voice input, switching to keyboard...")
+                        break  # Exit speech loop and go to keyboard input
+                    
                     # Process keyboard input
                     try:
                         island_id = int(selection)
@@ -89,13 +97,19 @@ class PirateGame(Node):
                 except queue.Empty:
                     pass  # No keyboard input yet, continue with speech
                 
-                # Listen for speech with timeout
-                text = self.speech.listen(timeout=8)
+                # Listen for speech with shorter timeout to check keyboard more frequently
+                text = self.speech.listen(timeout=3)
                 
                 # Check keyboard again after speech listening
                 try:
                     selection = keyboard_queue.get_nowait()
                     keyboard_done.set()
+                    
+                    # Empty input means user wants to skip voice and use keyboard
+                    if selection == "" or selection is None:
+                        print("⏭️  Skipping voice input, switching to keyboard...")
+                        break  # Exit speech loop and go to keyboard input
+                    
                     # Process keyboard input
                     try:
                         island_id = int(selection)
