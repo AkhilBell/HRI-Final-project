@@ -126,15 +126,15 @@ class SimpleMovement(Node):
         """
         self.get_logger().info(f"Navigating to Island {island_id}...")
         
-        # Step 1: Apply correction before turning to face island direction
-        correction_angle = math.radians(5)  # +5 degrees counterclockwise correction
-        self._apply_correction(correction_angle)
+        # # Step 1: Apply correction before turning to face island direction
+        # correction_angle = math.radians(5)  # +5 degrees counterclockwise correction
+        # self._apply_correction(correction_angle)
         
         # Turn to face island direction
         self.turn(position_angle)
         time.sleep(0.3)  # Brief pause
         
-        # Step 2: Move forward to reach island
+        # Move forward to reach island
         duration = self.island_distance / self.forward_speed
         self.move_forward(duration, self.forward_speed)
         time.sleep(0.3)  # Brief pause
@@ -166,7 +166,7 @@ class SimpleMovement(Node):
         time.sleep(0.3)  # Brief pause
         
         # Step 3: Apply correction before turning to face original direction (0°)
-        self._apply_correction(correction_angle)
+        self._apply_correction(-correction_angle)
         
         # Turn to face original direction (0°)
         # Robot is now at start, facing (position_angle + π)
