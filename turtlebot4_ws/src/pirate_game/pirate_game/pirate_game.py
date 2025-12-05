@@ -39,7 +39,7 @@ class PirateGame(Node):
         Returns:
             int: Selected island ID (1-3)
         """
-        max_speech_attempts = 2
+        max_speech_attempts = 1
         speech_attempt = 0
         
         # Queue to receive keyboard input from thread
@@ -274,7 +274,7 @@ class PirateGame(Node):
                     continue
                 
                 # Ask to continue, reset, or quit (voice or keyboard) after 10th round
-                max_speech_attempts = 2
+                max_speech_attempts = 1
                 speech_attempt = 0
                 command_handled = False
                 
